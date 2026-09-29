@@ -1,0 +1,16 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;1,9..144,500&family=Manrope:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: dark; }
+html { scroll-behavior: smooth; }
+body { @apply bg-bg text-inkInverse font-sans antialiased; }
+h1, h2, h3, h4 { @apply font-display font-medium tracking-tight; }
+
+@layer components {
+  .field-input {
+    @apply w-full rounded-md border border-white/20 bg-white/10 px-3.5 py-2.5 text-sm text-inkInverse outline-none placeholder:text-inkInverseSoft focus:border-goldSoft;
+  }
+}
