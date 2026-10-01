@@ -1,0 +1,210 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role { CUSTOMER ADMIN }
+enum ProductStatus { ACTIVE DRAFT OUT_OF_STOCK }
+enum BookingStatus { PENDING CONFIRMED CANCELLED COMPLETED }
+enum OrderStatus { PENDING CONFIRMED FULFILLED CANCELLED }
+
+model User {
+  id                  String                   @id @default(cuid())
+  name                String?
+  email               String                   @unique
+  password            String?
+  phone               String?
+  role                Role                     @default(CUSTOMER)
+  emailVerified       DateTime?
+  createdAt           DateTime                 @default(now())
+  cartItems           CartItem[]
+  wishlistItems       WishlistItem[]
+  orders              Order[]
+  passwordResetTokens PasswordResetToken[]
+  emailVerifyTokens   EmailVerificationToken[]
+  bookings            Booking[]
+  reviews             Review[]
+}
+
+model Category {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  name        String
+  description String?
+  heroLabel   String?
+  gradient    String?
+  sortOrder   Int       @default(0)
+  products    Product[]
+}
+
+model Product {
+  id          String         @id @default(cuid())
+  slug        String         @unique
+  name        String
+  description String?
+  price       Int
+  oldPrice    Int?
+  negotiable  Boolean        @default(false)
+  stock       Int            @default(0)
+  status      ProductStatus  @default(ACTIVE)
+  tag         String?
+  rating      Float          @default(0)
+  ratingCount Int            @default(0)
+  sku         String?        @unique
+  categoryId  String
+  category    Category       @relation(fields: [categoryId], references: [id])
+  images      ProductImage[]
+  reviews     Review[]
+  cartItems   CartItem[]
+  wishlist    WishlistItem[]
+  orderItems  OrderItem[]
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@index([categoryId])
+  @@index([name])
+  @@index([status])
+}
+
+model ProductImage {
+  id        String  @id @default(cuid())
+  url       String
+  alt       String?
+  sortOrder Int     @default(0)
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model CartItem {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, productId])
+}
+
+model WishlistItem {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, productId])
+}
+
+model Service {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  name        String
+  description String?
+  priceLabel  String?
+  duration    String?
+  active      Boolean   @default(true)
+  bookings    Booking[]
+}
+
+model Booking {
+  id            String        @id @default(cuid())
+  userId        String?
+  user          User?         @relation(fields: [userId], references: [id])
+  name          String
+  phone         String
+  email         String?
+  serviceId     String
+  service       Service       @relation(fields: [serviceId], references: [id])
+  preferredDate DateTime?
+  notes         String?
+  status        BookingStatus @default(PENDING)
+  createdAt     DateTime      @default(now())
+}
+
+model Order {
+  id            String      @id @default(cuid())
+  userId        String?
+  user          User?       @relation(fields: [userId], references: [id])
+  items         OrderItem[]
+  total         Int
+  status        OrderStatus @default(PENDING)
+  customerName  String
+  customerPhone String
+  customerEmail String?
+  notes         String?
+  isPaid        Boolean     @default(false)
+  refunded      Boolean     @default(false)
+  paystackRef   String?     @unique
+  paidAt        DateTime?
+  createdAt     DateTime    @default(now())
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+  price     Int
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  name      String
+  rating    Int
+  text      String
+  imageUrl  String?
+  verified  Boolean  @default(false)
+  approved  Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model CampaignBanner {
+  id        String    @id @default(cuid())
+  title     String
+  caption   String?
+  imageUrl  String?
+  ctaLabel  String?
+  ctaUrl    String?
+  active    Boolean   @default(true)
+  startDate DateTime?
+  endDate   DateTime?
+  createdAt DateTime  @default(now())
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model EmailVerificationToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
